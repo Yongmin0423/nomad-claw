@@ -2,14 +2,36 @@ export {DurablePotato} from "./do";
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		const { pathname, searchParams} = new URL(request.url);
-			const nickname = searchParams.get('nickname') ?? 'anon';
+		const {pathname} = new URL(request.url);
 
-		if (pathname === "/") {
-			const dp = env.DP.getByName('default');
-			//네트워크 작업이 필요하기 때문에 await 키워드를 붙인다.
-			return new Response(await dp.increase());
+		if (request.method === "POST" && (pathname === "/increment" || pathname === "/decrement")) {
+			const visitor = {
+				ip: request.headers.get("CF-Connecting-IP"),
+				city: request.cf?.city ?? null,
+				country: request.cf?.country ?? null,
+			};
+			const counter = env.DP.getByName("default");
+			const count = pathname === "/increment"
+				? await counter.increment(visitor)
+				: await counter.decrement(visitor);
+
+			return Response.json({count});
 		}
+
+		if (request.method === "GET" && pathname === "/count") {
+			const counter = env.DP.getByName("default");
+			const count = await counter.getCount();
+
+			return Response.json({count});
+		}
+
+		if (request.method === "GET" && pathname === "/history") {
+			const counter = env.DP.getByName("default");
+			const history = await counter.getHistory();
+
+			return Response.json(history);
+		}
+
 		return new Response(null, {
 			status: 404,
 		});

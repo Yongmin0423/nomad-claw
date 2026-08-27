@@ -1,4 +1,19 @@
 ### 2026-08-26
+- **최근 변경 이력 조회 경로 추가** — `src/do.ts`, `src/index.ts`
+  - 원인/이유: 저장된 카운트 변경 이력을 HTTP로 조회할 경로가 없었습니다.
+  - 수정: 변경 이력을 최신순으로 최대 100건 조회하는 `getHistory()`와 `GET /history`를 추가했습니다.
+- **현재 카운트 조회 경로 추가** — `src/do.ts`, `src/index.ts`
+  - 원인/이유: 저장된 현재 카운트를 변경 없이 조회할 HTTP 경로가 없었습니다.
+  - 수정: `getCount()`로 `counter` 테이블을 조회하고 `GET /count`에서 `{count}` JSON을 반환하도록 연결했습니다.
+- **카운트 감소 경로 추가** — `src/do.ts`, `src/index.ts`
+  - 원인/이유: 카운트를 줄이고 해당 방문자 정보를 이력에 남기는 경로가 없었습니다.
+  - 수정: `decrement()`가 기존 `change(-1, visitor)`를 사용하도록 하고 `POST /decrement`에 연결했습니다.
+- **카운트 변경 로직 분리** — `src/do.ts`, `src/index.ts`
+  - 원인/이유: 공개 메서드 이름이 `/increment` 경로와 다르고, 증가 처리 안에 향후 감소에서도 재사용할 SQL 로직이 들어 있었습니다.
+  - 수정: 공개 메서드를 `increment()`로 맞추고 실제 카운트 변경과 이력 저장을 내부 `change()`로 분리했습니다.
+- **방문자 정보 기반 증가 경로 연결** — `src/index.ts`, `src/do.ts`
+  - 원인/이유: Worker가 요청의 IP·도시·국가를 읽어 Durable Object에 전달하는 HTTP 경로가 없었습니다.
+  - 수정: `POST /increment`에서 방문자 정보를 추출하고 카운트 증가 결과를 `{count}` JSON으로 반환하도록 연결했습니다.
 - **카운터 스키마 명명 정리** — `src/do.ts`
   - 원인/이유: 수업 예제에서 남은 `pongs`와 `total`이 현재 카운터 역할을 설명하지 못했습니다.
   - 수정: 테이블을 `counter`, 현재 값 열을 `count`로 변경했습니다.

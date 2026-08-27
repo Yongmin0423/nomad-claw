@@ -6,6 +6,13 @@ export type Visitor = {
 	country: string | null;
 };
 
+type HistoryEntry = Visitor & {
+	id: number;
+	delta: number;
+	count: number;
+	created_at: string;
+};
+
 export class DurablePotato extends DurableObject<Env> {
     // cloudflare의 청사진 같은 역할
 	// 아무 동작 하지 않으면 idle상태로 변하는데, 그 이후에 일정 시간 아무 동작이 없으면 hibernate 된다.
@@ -37,13 +44,36 @@ export class DurablePotato extends DurableObject<Env> {
 				`)
 	};
 
-	async increase(visitor: Visitor = {ip: null, city: null, country: null}) {
+	async increment(visitor: Visitor = {ip: null, city: null, country: null}) {
+		return this.change(1, visitor);
+	}
+
+	async decrement(visitor: Visitor = {ip: null, city: null, country: null}) {
+		return this.change(-1, visitor);
+	}
+
+	async getCount() {
+		const {count} = this.sql.exec('SELECT count FROM counter WHERE id = 1').one() as {count: number};
+
+		return count;
+	}
+
+	async getHistory() {
+		return this.sql.exec<HistoryEntry>(`
+			SELECT id, delta, count, ip, city, country, created_at
+			FROM history
+			ORDER BY id DESC
+			LIMIT 100
+		`).toArray();
+	}
+
+	private change(delta: 1 | -1, visitor: Visitor) {
 		const count = this.ctx.storage.transactionSync(() => {
-			const {count} = this.sql.exec('UPDATE counter SET count = count + 1 WHERE id = 1 RETURNING count').one() as {count: number};
+			const {count} = this.sql.exec('UPDATE counter SET count = count + ? WHERE id = 1 RETURNING count', delta).one() as {count: number};
 
 			this.sql.exec(
 				'INSERT INTO history (delta, count, ip, city, country) VALUES (?, ?, ?, ?, ?)',
-				1,
+				delta,
 				count,
 				visitor.ip,
 				visitor.city,
@@ -53,6 +83,6 @@ export class DurablePotato extends DurableObject<Env> {
 			return count;
 		});
 
-		return `count is ${count}`;
+		return count;
 	}
 }

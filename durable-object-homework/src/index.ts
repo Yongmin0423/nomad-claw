@@ -1,8 +1,25 @@
 export {DurablePotato, ChatRoom} from "./do";
+import {chatPage} from "./chat-page";
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const {pathname, searchParams} = new URL(request.url);
+
+		if (request.method === "GET" && pathname === "/") {
+			return new Response(chatPage, {
+				headers: {
+					"Content-Type": "text/html; charset=UTF-8",
+					"Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+					"X-Content-Type-Options": "nosniff",
+				},
+			});
+		}
+
+		if (request.method === "GET" && pathname === "/message") {
+			const roomId = searchParams.get("roomId") ?? "public";
+			const chatRoom = env.CHAT_ROOM.getByName(roomId);
+			return Response.json(await chatRoom.getMessages());
+		}
 
 		if (request.method === "POST" && (pathname === "/increment" || pathname === "/decrement")) {
 			const visitor = {

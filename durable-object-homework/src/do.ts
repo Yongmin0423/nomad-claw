@@ -70,6 +70,20 @@ export class ChatRoom extends DurableObject<Env> {
 
 		return new Response(null, {status: 101, webSocket: client});
 	}
+
+	getMessages(): ChatMessage[] {
+		return this.sql.exec<ChatMessage>(`
+			SELECT id, nickname, content, created_at
+			FROM (
+				SELECT id, nickname, content, created_at
+				FROM messages
+				ORDER BY id DESC
+				LIMIT 100
+			)
+			ORDER BY id ASC
+		`).toArray();
+	}
+
 	private broadcast(message: string, exclude?: WebSocket): void {
 		for  (const socket of this.ctx.getWebSockets()) {
 			if(exclude !== socket) {

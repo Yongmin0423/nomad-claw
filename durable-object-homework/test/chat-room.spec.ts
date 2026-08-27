@@ -31,6 +31,14 @@ async function connect(roomId: string, nickname: string): Promise<WebSocket> {
 }
 
 describe("ChatRoom", () => {
+	it("serves the chat page", async () => {
+		const response = await SELF.fetch("https://example.com/");
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get("Content-Type")).toContain("text/html");
+		expect(await response.text()).toContain("Durable Object Chat");
+	});
+
 	it("broadcasts an incoming message to every connection and stores it", async () => {
 		const alice = await connect("broadcast-room", "alice");
 		const bob = await connect("broadcast-room", "bob");
@@ -55,6 +63,14 @@ describe("ChatRoom", () => {
 			]);
 			expect(await state.storage.getAlarm()).not.toBeNull();
 		});
+
+		const historyResponse = await SELF.fetch(
+			"https://example.com/message?roomId=broadcast-room",
+		);
+		expect(historyResponse.status).toBe(200);
+		expect(await historyResponse.json()).toEqual([
+			expect.objectContaining({ nickname: "alice", content: "hello" }),
+		]);
 
 		alice.close(1000, "Test finished");
 		bob.close(1000, "Test finished");

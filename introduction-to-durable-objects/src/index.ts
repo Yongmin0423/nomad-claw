@@ -3,13 +3,15 @@ export {DurablePotato} from "./do";
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const { pathname, searchParams} = new URL(request.url);
-			const nickname = searchParams.get('nickname') ?? 'anon';
-
-		if (pathname === "/") {
-			const dp = env.DP.getByName('default');
-			//네트워크 작업이 필요하기 때문에 await 키워드를 붙인다.
-			return new Response(await dp.increase());
+		if (pathname === '/ws') {
+			const roomId = searchParams.get('roomId') ?? 'public';
+		const upgrade = request.headers.get('Upgrade');
+		if (upgrade) {
+			//여기서 websocket 연결을 수립한다.
+			const dp = env.DP.getByName(roomId);
+			return dp.fetch(request);
 		}
+	}
 		return new Response(null, {
 			status: 404,
 		});

@@ -1,8 +1,8 @@
-export {DurablePotato} from "./do";
+export {DurablePotato, ChatRoom} from "./do";
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
-		const {pathname} = new URL(request.url);
+		const {pathname, searchParams} = new URL(request.url);
 
 		if (request.method === "POST" && (pathname === "/increment" || pathname === "/decrement")) {
 			const visitor = {
@@ -30,6 +30,22 @@ export default {
 			const history = await counter.getHistory();
 
 			return Response.json(history);
+		}
+
+		if (request.method === "GET" && pathname === "/ws") {
+			const upgrade = request.headers.get('Upgrade');
+			
+			if (upgrade !== 'websocket') {
+				return new Response('Expected Websocket', {
+					status: 400,
+				})
+			}
+			const roomId = searchParams.get('roomId') ?? 'public';
+			const chatRoom =  env.CHAT_ROOM.getByName(roomId);
+
+			return chatRoom.fetch(request);
+
+			
 		}
 
 		return new Response(null, {

@@ -59,9 +59,9 @@ fetch(request: Request){
  }
 
  broadcast(message:string, exclude?: WebSocket) {
-   for(const sockiet of this.ctx.getWebSockets() ) {
-	if(exclude !== sockiet) {
-		sockiet.send(message);
+   for(const socket of this.ctx.getWebSockets() ) {
+	if(exclude !== socket) {
+		socket.send(message);
 	}
    }	
  }

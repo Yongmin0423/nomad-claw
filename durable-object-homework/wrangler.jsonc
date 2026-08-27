@@ -21,6 +21,10 @@
 				"class_name": "DurablePotato",
 				// name은 worker가 durable object에 접근하는 방법이다.
 				"name": "DP"
+			},
+			{
+				"class_name": "ChatRoom",
+				"name": "CHAT_ROOM"
 			}
 		]
 	},
@@ -30,6 +34,12 @@
 				"DurablePotato"
 			],
 			"tag": "v1"
+		},
+		{
+			"new_sqlite_classes": [
+				"ChatRoom"
+			],
+			"tag": "v2"
 		}
 	]
 	/**

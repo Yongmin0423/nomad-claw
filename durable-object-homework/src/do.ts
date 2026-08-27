@@ -13,6 +13,93 @@ type HistoryEntry = Visitor & {
 	created_at: string;
 };
 
+export type ChatMessage = {
+	id: number;
+	nickname: string;
+	content: string;
+	created_at: string;
+}
+
+export class ChatRoom extends DurableObject<Env> {
+	private readonly sql: SqlStorage;
+	async alarm(): Promise<void> {
+		this.sql.exec(
+			`DELETE FROM messages
+			WHERE created_at <= datetime('now', '-5 minutes')`
+		);
+
+		await this.ctx.storage.setAlarm(Date.now() + 60_000);
+	}
+	constructor(ctx:DurableObjectState, env:Env) {
+		super(ctx, env);
+
+		this.sql = ctx.storage.sql;
+		this.sql.exec(`
+			CREATE TABLE IF NOT EXISTS messages (
+			 id INTEGER PRIMARY KEY AUTOINCREMENT,
+			 nickname TEXT NOT NULL,
+			 content TEXT NOT NULL,
+			 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+			)`)
+	}
+	async fetch(request: Request): Promise<Response> {
+		const upgrade = request.headers.get('Upgrade');
+		
+		if(upgrade !== 'websocket'){
+			return new Response("Expected WebSocket", {
+				status: 400,
+			})
+		}
+		const url = new URL(request.url);
+		const nickname = url.searchParams.get('nickname') ?? 'ANON';
+
+		const webSocketPair = new WebSocketPair();
+		const [client, server ] = Object.values(webSocketPair);
+
+
+		this.ctx.acceptWebSocket(server);
+		server.serializeAttachment({nickname});
+
+		const currentAlarm = await this.ctx.storage.getAlarm();
+
+		if(currentAlarm === null) {
+			await this.ctx.storage.setAlarm(
+				Date.now() + 60000,
+			)
+		}
+
+		return new Response(null, {status: 101, webSocket: client});
+	}
+	private broadcast(message: string, exclude?: WebSocket): void {
+		for  (const socket of this.ctx.getWebSockets()) {
+			if(exclude !== socket) {
+				socket.send(message);
+			}
+		}
+	}
+
+	webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): void | Promise<void> {
+		const {nickname} = ws.deserializeAttachment() as {nickname: string};
+
+		const content = typeof message === "string" ? message : new TextDecoder().decode(message);
+		
+		this.sql.exec(
+			`INSERT INTO messages (nickname, content) VALUES (?, ?)`,
+			nickname,
+			content,
+		);
+		this.broadcast(`${nickname}: ${content}`);
+	}
+
+	webSocketClose(ws: WebSocket): void | Promise<void> {
+		const {nickname} = ws.deserializeAttachment() as {nickname: string};
+		this.broadcast(`${nickname} has left the chat room`)
+		
+	}
+
+	
+}
+
 export class DurablePotato extends DurableObject<Env> {
     // cloudflare의 청사진 같은 역할
 	// 아무 동작 하지 않으면 idle상태로 변하는데, 그 이후에 일정 시간 아무 동작이 없으면 hibernate 된다.

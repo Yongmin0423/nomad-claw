@@ -54,12 +54,19 @@ export class ChattingRoomAgent extends Agent<Env,ChattingRoomState> {
 			message: message.toString(),
 			created_at: Date.now(),
 		};
+		if(message.toString().includes("delete")) {
+			this.scheduleEvery(30,"deleteMessages");
+		}
 		void this.sql`
 		INSERT INTO messages (nickname, message, created_at) VALUES(${messageObj.nickcname}, ${messageObj.message}, ${messageObj.created_at});
 		`
 		//this.broadcast(JSON.stringify(messageObj), [connection.id]);
 		this.broadcast(JSON.stringify(messageObj));
 
+	}
+
+	deleteMessages () {
+		void this.sql`DELETE FROM messages`
 	}
 
 	@callable()

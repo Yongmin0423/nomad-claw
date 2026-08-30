@@ -1,4 +1,4 @@
-import { Agent, callable, getCurrentAgent, routeAgentRequest, type Connection, type WSMessage } from 'agents';
+import { Agent, callable, getCurrentAgent, routeAgentRequest, type Connection, type ConnectionContext, type WSMessage } from 'agents';
 
 export type ChattingRoomState = {
 	currentlyOnline: number;
@@ -21,6 +21,12 @@ export class ChattingRoomAgent extends Agent<Env,ChattingRoomState> {
 		this.setState({
 			currentlyOnline: this.state.currentlyOnline - 1
 		});
+	}
+
+	shouldConnectionBeReadonly(_connection: Connection, ctx: ConnectionContext) {
+		const url = new URL(ctx.request.url);
+		const nickname = url.searchParams.get('name') ?? 'anon';
+		return nickname.includes('admin');
 	}
 
 	onConnect(connection:Connection, ctx: ConnectionContext): void | Promise<void> {
@@ -59,6 +65,7 @@ export class ChattingRoomAgent extends Agent<Env,ChattingRoomState> {
 	@callable()
 	loadHistory(){
 		const {connection} = getCurrentAgent<ChattingRoomAgent>();
+		// this.setConnectionReadonly(connection, true)
 		console.log(connection.state);
 		return this.sql`SELECT * FROM messages ORDER BY created_at ASC LIMIT 100`
 	}
@@ -73,6 +80,11 @@ export class ChattingRoomAgent extends Agent<Env,ChattingRoomState> {
 		)
 		`
 	}
+
+	@callable()
+	clearHistory(){
+		void this.sql`DELETE FROM messages`;
+	}
 		
 	
 
@@ -81,10 +93,10 @@ export class ChattingRoomAgent extends Agent<Env,ChattingRoomState> {
 	// 	console.log('who did it', source)
 	// }
 
-	validateStateChange(_nextState: ChattingRoomState, source: Connection | 'server'): void {
-		if (source !== 'server') throw new Error('cant do this');
+// 	validateStateChange(_nextState: ChattingRoomState, source: Connection | 'server'): void {
+// 		if (source !== 'server') throw new Error('cant do this');
 
-	}
+// 	}
 }
 
 export default {

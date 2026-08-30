@@ -29,6 +29,7 @@ function App() {
 		// onStateUpdate: (state) => setPingPongs(state.pingPongCount),
 		onClose: () => setIsConnected(false),
 		onError: () => setIsConnected(false),
+		onStateUpdateError: () => console.log('cant do that.'),
 		onMessage: (event) => setMessages(prev => [...prev, JSON.parse(event.data)] as Message[]),
 	})
 

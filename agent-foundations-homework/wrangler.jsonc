@@ -18,17 +18,20 @@
 	"durable_objects": {
 		"bindings": [
 			{
-				"class_name": "ChattingRoomAgent",
-				"name": "ChattingRoomAgent",
+				"class_name": "VoteRoomAgent",
+				"name": "VoteRoomAgent",
 			},
 		],
 	},
 	"migrations": [
 		{
-			"new_sqlite_classes": ["ChattingRoomAgent"],
+			"new_sqlite_classes": ["VoteRoomAgent"],
 			"tag": "v1",
 		},
 	],
+	"secrets": {
+		"required": ["ROOM_TOKEN"],
+	},
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

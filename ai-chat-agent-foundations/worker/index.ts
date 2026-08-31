@@ -2,7 +2,7 @@ import { AIChatAgent } from "@cloudflare/ai-chat";
 import { routeAgentRequest } from "agents";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
-import { getWeather } from "./tools";
+import { getLocation, getWeather } from "./tools";
 
 export class PotatoChatAgent extends AIChatAgent<Env> {
   async onChatMessage() {
@@ -13,7 +13,8 @@ export class PotatoChatAgent extends AIChatAgent<Env> {
       model: workersAi("@cf/zai-org/glm-4.7-flash"),
       messages:  await convertToModelMessages(this.messages),
       tools: {
-        get_weather: getWeather
+        getWeather,
+        getLocation,
       },
       stopWhen: stepCountIs(50),
     });

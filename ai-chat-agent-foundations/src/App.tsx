@@ -5,7 +5,20 @@ function App() {
   const agent = useAgent({ agent: "PotatoChatAgent" });
   const { messages, sendMessage, clearHistory, status } = useAgentChat({
     agent,
+    onToolCall: async ({ toolCall, addToolOutput }) => {
+      if (toolCall.toolName === "getLocation") {
+        const position = await new Promise<GeolocationPosition>(
+          (resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject),
+        );
+        addToolOutput({
+          toolCallId: toolCall.toolCallId,
+          output: position.toJSON(),
+        });
+      }
+    },
   });
+
   const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);

@@ -11,3 +11,9 @@ export const getWeather = tool({
         return `The weather in the ${city} is sunny`
     }
 });
+
+export const getLocation = tool({
+    title: "getLocation",
+    description: "Use this to get the user location",
+    inputSchema: z.object({})
+})

@@ -1,7 +1,8 @@
 import { AIChatAgent } from "@cloudflare/ai-chat";
 import { routeAgentRequest } from "agents";
-import { convertToModelMessages, streamText } from "ai";
+import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
+import { getWeather } from "./tools";
 
 export class PotatoChatAgent extends AIChatAgent<Env> {
   async onChatMessage() {
@@ -9,8 +10,12 @@ export class PotatoChatAgent extends AIChatAgent<Env> {
       binding: this.env.AI,
     });
     const result = await streamText({
-      messages:  await convertToModelMessages(this.messages),
       model: workersAi("@cf/zai-org/glm-4.7-flash"),
+      messages:  await convertToModelMessages(this.messages),
+      tools: {
+        get_weather: getWeather
+      },
+      stopWhen: stepCountIs(50),
     });
     return result.toUIMessageStreamResponse();
   }

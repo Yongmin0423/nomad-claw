@@ -2,10 +2,10 @@ import { AIChatAgent } from "@cloudflare/ai-chat";
 import { routeAgentRequest } from "agents";
 import { convertToModelMessages, stepCountIs, streamText } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
-import { getLocation, getWeather } from "./tools";
+import { buyPlaneTicket, getLocation, getTickets, getWeather } from "./tools";
 
 export class PotatoChatAgent extends AIChatAgent<Env> {
-  async onChatMessage() {
+  async onChatMessage(_onFinish: unknown, options: {abortSignal?: AbortSignal}) {
     const workersAi = createWorkersAI({
       binding: this.env.AI,
     });
@@ -15,7 +15,10 @@ export class PotatoChatAgent extends AIChatAgent<Env> {
       tools: {
         getWeather,
         getLocation,
+        getTickets,
+        buyPlaneTicket,
       },
+      abortSignal: options.abortSignal,
       stopWhen: stepCountIs(50),
     });
     return result.toUIMessageStreamResponse();

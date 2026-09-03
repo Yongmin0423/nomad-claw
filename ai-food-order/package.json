@@ -1,5 +1,5 @@
 {
-  "name": "ai-chat-agent-foundations",
+  "name": "ai-food-order",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,8 +12,9 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@cloudflare/ai-chat": "^0.7.0",
-    "agents": "^0.12.4",
+    "@ai-sdk/react": "4.0.90",
+    "@cloudflare/ai-chat": "^0.11.0",
+    "agents": "^0.22.0",
     "ai": "^6.0.182",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

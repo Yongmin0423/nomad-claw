@@ -1,6 +1,7 @@
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
+import type { BrowserAgent, BrowserAgentState } from "../worker/index";
 
 type SeoCheck = {
   id: string;
@@ -84,8 +85,9 @@ function SeoAuditCard({ output }: { output: SeoAuditOutput }) {
 }
 
 function App() {
-  const agent = useAgent({ agent: "BrowserAgent" });
-
+  const agent = useAgent<BrowserAgent, BrowserAgentState>({
+    agent: "BrowserAgent",
+  });
   const {
     messages,
     sendMessage,

@@ -12,7 +12,8 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-05-15",
 	"assets": {
-		"not_found_handling": "single-page-application"
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/screenshots/*"]
 	},
 	"observability": {
 		"enabled": true
@@ -47,7 +48,8 @@
 	"r2_buckets": [
 		{
 			"bucket_name": "browser-agents-bucket",
-			"binding": "FILES"
+			"binding": "FILES",
+			// "remote": true
 		}
 	],
 	// Disabled because Dynamic Workers require the Workers Paid plan.

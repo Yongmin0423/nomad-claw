@@ -7,6 +7,7 @@ import { convertToModelMessages, isLoopFinished, streamText, tool } from "ai";
 import { createWorkersAI } from "workers-ai-provider";
 import { z } from "zod/v4";
 
+
 const auditUrlSchema = z
   .url()
   .refine((url) => {
@@ -175,21 +176,62 @@ function createSeoAuditTool(browserBinding: Env["BROWSER"]) {
   });
 }
 
-export class BrowserAgent extends AIChatAgent<Env> {
+export type BrowserAgentState = {
+  liveUrl?: string;
+};
+
+export class BrowserAgent extends AIChatAgent<Env, BrowserAgentState> {
+  initialState = {
+    liveUrl: null,
+  };
   browser?: Browser;
   page?: Page;
 
   async getPage() {
     if (this.page && this.browser?.connected) return this.page;
 
-    this.browser = await puppeteer.launch(this.env.BROWSER);
+    this.browser = await puppeteer.launch(this.env.BROWSER, {
+      recording: true,
+    });
     this.page = await this.browser.newPage();
     await this.page.setViewport({
       width: 1280,
       height: 720,
     });
 
+    await this.getLiveViewUrl();
+
     return this.page;
+  }
+
+async getLiveViewUrl() {
+    if (!this.browser) return;
+
+    const sessionId = this.browser.sessionId();
+
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${this.env.ACCOUNT_ID}/browser-rendering/devtools/browser/${sessionId}/json/list`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.env.API_TOKEN}`,
+        },
+      },
+    );
+
+    const data = (await res.json()) as {
+      type: string;
+      devtoolsFrontendUrl: string;
+    }[];
+
+    const url = data.find(
+      (target) => target.type === "page",
+    ).devtoolsFrontendUrl;
+
+    const liveUrl = new URL(url);
+    liveUrl.searchParams.set("mode", "tab");
+    this.setState({
+      liveUrl: liveUrl.toString(),
+    });
   }
 
   async onChatMessage() {
@@ -237,9 +279,19 @@ After the tool returns, answer in the user's language. Report the code-calculate
 
 export default {
   async fetch(request, env) {
+    const url = new URL (request.url);
+    if(url.pathname.startsWith("/screenshots")){
+      const key = url.pathname.slice(1);
+      const file = await env.FILES.get(key);
+      if(file) return new Response (file.body, {
+        headers: {
+          "Content-Type": file.httpMetadata.contentType ?? "application/octet-stream",
+        }
+      }) 
+    }
     return (
       (await routeAgentRequest(request, env)) ??
       new Response(null, { status: 404 })
     );
   },
-} satisfies ExportedHandler<Env>;
+} satisfies ExportedHandler<Env>; 

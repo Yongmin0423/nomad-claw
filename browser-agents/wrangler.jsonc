@@ -41,13 +41,22 @@
 		}
 	],
 	"browser": {
-		"binding": "BROWSER"
+		"binding": "BROWSER",
+		"remote": true,
 	},
-	"worker_loaders": [
+	"r2_buckets": [
 		{
-			"binding": "LOADER"
+			"bucket_name": "browser-agents-bucket",
+			"binding": "FILES"
 		}
-	]
+	],
+	// Disabled because Dynamic Workers require the Workers Paid plan.
+	// Keep this commented out when deploying on the Workers Free plan.
+	// "worker_loaders": [
+	// 	{
+	// 		"binding": "LOADER"
+	// 	}
+	// ]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

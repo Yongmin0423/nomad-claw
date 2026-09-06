@@ -12,9 +12,9 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@cloudflare/ai-chat": "^0.7.0",
+    "@cloudflare/ai-chat": "^0.11.0",
     "@tailwindcss/vite": "^4.3.0",
-    "agents": "^0.12.4",
+    "agents": "^0.22.0",
     "ai": "^6.0.182",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
@@ -23,6 +23,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^8.0.2",
+    "@cloudflare/puppeteer": "^1.4.0",
     "@cloudflare/vite-plugin": "^1.37.0",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.13.3",

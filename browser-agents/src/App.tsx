@@ -2,6 +2,87 @@ import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useAgent } from "agents/react";
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
 
+type SeoCheck = {
+  id: string;
+  label: string;
+  passed: boolean;
+  found: unknown;
+};
+
+type SeoAuditOutput = {
+  finalUrl: string;
+  score: number;
+  passedCount: number;
+  totalChecks: number;
+  checks: SeoCheck[];
+  screenshot: string;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isSeoAuditOutput(value: unknown): value is SeoAuditOutput {
+  return (
+    isRecord(value) &&
+    typeof value.finalUrl === "string" &&
+    typeof value.score === "number" &&
+    typeof value.passedCount === "number" &&
+    typeof value.totalChecks === "number" &&
+    Array.isArray(value.checks) &&
+    value.checks.every(
+      (check) =>
+        isRecord(check) &&
+        typeof check.id === "string" &&
+        typeof check.label === "string" &&
+        typeof check.passed === "boolean",
+    ) &&
+    typeof value.screenshot === "string" &&
+    value.screenshot.startsWith("data:image/png;base64,")
+  );
+}
+
+function SeoAuditCard({ output }: { output: SeoAuditOutput }) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-zinc-200 bg-white text-zinc-900 shadow-sm">
+      <div className="flex items-center justify-between border-b border-zinc-200 px-3 py-2">
+        <div>
+          <div className="text-xs font-medium text-zinc-500">SEO audit</div>
+          <div className="max-w-sm truncate text-xs text-zinc-400">
+            {output.finalUrl}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-xl font-bold">{output.score}/100</div>
+          <div className="text-[10px] text-zinc-500">
+            {output.passedCount}/{output.totalChecks} passed
+          </div>
+        </div>
+      </div>
+
+      <img
+        src={output.screenshot}
+        alt={`Screenshot of the audited page at ${output.finalUrl}`}
+        className="aspect-video w-full border-b border-zinc-200 object-cover object-top"
+      />
+
+      <ul className="divide-y divide-zinc-100">
+        {output.checks.map((check) => (
+          <li key={check.id} className="px-3 py-2">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <span aria-hidden="true">{check.passed ? "✅" : "❌"}</span>
+              <span>{check.label}</span>
+            </div>
+            <pre className="mt-1 overflow-x-auto whitespace-pre-wrap break-words text-[10px] text-zinc-500">
+              {JSON.stringify(check.found, null, 2)}
+            </pre>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function App() {
   const agent = useAgent({ agent: "BrowserAgent" });
 
@@ -91,6 +172,14 @@ function App() {
           );
         }
 
+        if (
+          getToolName(part) === "auditSeo" &&
+          part.state === "output-available" &&
+          isSeoAuditOutput(part.output)
+        ) {
+          return <SeoAuditCard key={i} output={part.output} />;
+        }
+
         return (
           <div
             key={i}
@@ -124,13 +213,13 @@ function App() {
       <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
           <h1 className="shrink-0 text-sm font-semibold tracking-tight">
-            🌐 Browser Agent
+            🔎 SEO Audit Agent
           </h1>
 
           <form onSubmit={handleSubmit} className="flex flex-1 gap-2">
             <input
               name="input"
-              placeholder="Type a message..."
+              placeholder="Paste a URL to audit..."
               autoComplete="off"
               className="flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm outline-none transition focus:border-zinc-400 focus:bg-white"
             />
@@ -161,7 +250,7 @@ function App() {
         <div className="flex-1 space-y-4">
           {messages.length === 0 && (
             <div className="flex h-full min-h-[40vh] items-center justify-center text-sm text-zinc-400">
-              Say something to get started.
+              Paste a page URL to run an 8-point SEO audit.
             </div>
           )}
           {messages.map((message) => {
